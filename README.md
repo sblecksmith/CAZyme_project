@@ -1,5 +1,5 @@
-# "Gut microbiome genes involved in plant and mucin breakdown correlate with diet and gastrointestinal inflammation in healthy US adults"
-# Sarah E. Blecksmith, Andrew Oliver, Zeynep Alkan and Danielle G. Lemay.
+# Gut microbiome genes involved in plant and mucin breakdown correlate with diet and gastrointestinal inflammation in healthy US adults
+## Sarah E. Blecksmith, Andrew Oliver, Zeynep Alkan and Danielle G. Lemay.
 
 ## Main Scripts
 
