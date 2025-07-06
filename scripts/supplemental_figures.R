@@ -609,16 +609,50 @@ table_S6 <- diet_models %>%
   gtsave("table_S6.html", path = "output")
 
 
-# Table S7 - muc2plant with sulfatases and inflammatory variables
+# Table S8 - muc2plant  and inflammatory variables
+tableS7_variables = c("muc2plantGHPL")
+inflamm_variables = c("fecal_calprotectin", "fecal_neopterin", "fecal_mpo", "plasma_lbp")
 
-tableS7_variables = c("muc2plantGHPL_sulf")
+# run models
+inflamm_models <- looped_regression(merged, inflamm_variables, tableS7_variables, inflammation_transformations, FALSE) 
+
+table_S7 <- inflamm_models %>%
+  mutate(Outcome = case_when(Outcome == "fecal_calprotectin" ~ "Fecal calprotectin",
+                             Outcome == "fecal_mpo" ~ "Fecal myeloperoxidase",
+                             Outcome == "fecal_neopterin" ~ "Fecal neopterin",
+                             Outcome == "plasma_lbp" ~ "Plasma lipopolysaccharide binding protein"),
+         Variable = case_when(Variable == "muc2plantGHPL" ~ "Mucin to plant ratio")) %>%
+  mutate(outcome_transform = paste0(Outcome, " (transform: ", Transformation, ")")) %>%
+  select(-c(Outcome, Transformation)) %>%
+  gt(groupname_col = "outcome_transform") %>%
+  tab_header(
+    title = md("**Transformed inflammatory variables and microbiome variables**")) %>%
+  tab_style(
+    style = (
+      cell_text(weight = "bold")
+    ),
+    location = cells_row_groups()) %>%
+  tab_style(
+    style = (cell_fill(color = "#F9E3D6")
+    ),
+    locations = cells_body(
+      rows = P_Value < 0.05
+    )
+  ) %>%
+  fmt_number(decimals = 3) 
+table_S7 #%>%
+gtsave("table_S7.html", path = "output")
+
+
+# Table S8 - muc2plant with sulfatases and inflammatory variables
+tableS8_variables = c("muc2plantGHPL_sulf")
 inflamm_variables = c("fecal_calprotectin", "fecal_neopterin", "fecal_mpo", "plasma_lbp")
 
 
 # run models
-inflamm_models <- looped_regression(no_seaweed, inflamm_variables, tableS7_variables, inflammation_transformations, FALSE) 
+inflamm_models <- looped_regression(merged, inflamm_variables, tableS8_variables, inflammation_transformations, FALSE) 
 
-table_S7 <- inflamm_models %>%
+table_S8 <- inflamm_models %>%
   mutate(Outcome = case_when(Outcome == "fecal_calprotectin" ~ "Fecal calprotectin",
                              Outcome == "fecal_mpo" ~ "Fecal myeloperoxidase",
                              Outcome == "fecal_neopterin" ~ "Fecal neopterin",
@@ -642,7 +676,7 @@ table_S7 <- inflamm_models %>%
     )
   ) %>%
   fmt_number(decimals = 3) 
-table_S7 %>%
-gtsave("table_S7_sulfatases.html", path = "output")
+table_S8 %>%
+gtsave("table_S8_sulfatases.html", path = "output")
 
 
