@@ -6,8 +6,12 @@
 library(dplyr)
 library(Hmisc)
 
-muc2plant <- read.csv("data/muc2plant_ratioGH_GHPL.csv", header = TRUE) %>%
-  select(c(subject_id, muc2plantGH, muc2plantGHPL))
+#muc2plant <- read.csv("data/muc2plant_ratioGH_GHPL.csv", header = TRUE) %>%
+ # select(c(subject_id, muc2plantGH, muc2plantGHPL))
+
+muc2plant <- read.csv("data/muc2plant_sulf.csv", header = TRUE) %>%
+  select(c(subject_id, plant_family_totalGH, plant_family_totalGHPL, mucin_family_total, muc2plantGH, muc2plantGHPL, sulfatase_rpkg, sulfatase_no_akk_rpkg))
+
 alpha_diversity <- read.csv("data/cazyme_families_rounded_diversity.csv", header = TRUE) %>%
   select(c(subject_id, Observed, Shannon, Chao1))
 abundance <- read.csv("data/plant_cazyme_abundance.csv", header = TRUE)
@@ -28,7 +32,8 @@ merged$Chao1_quartile = as.numeric(cut2(merged$Chao1, g = 4))
 merged$muc2plantGH_quartile = as.numeric(cut2(merged$muc2plantGH, g = 4))
 merged$muc2plantGHPL_quartile = as.numeric(cut2(merged$muc2plantGHPL, g = 4))
 merged$plant_cazyme_abundance_quartile = as.numeric(cut2(merged$plant_cazyme_abundance, g = 4))
-
+merged$sulfatase_rpkg_quartile = as.numeric(cut2(merged$sulfatase_rpkg, g = 4))
+merged$sulfatase_no_akk_rpkg_quartile = as.numeric(cut2(merged$sulfatase_no_akk_rpkg, g = 4))
 #Filter out where AfterV2 = 0, we don't want to use the subjects who submitted stool after the test meal
 merged <- merged %>% filter(AfterV2 == 0) # now 303
 
