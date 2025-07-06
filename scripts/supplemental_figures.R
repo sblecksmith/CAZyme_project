@@ -394,6 +394,7 @@ table_S2 <- fiber_models %>%
       rows = P_Value < 0.05
     )
   ) %>%
+  fmt_number(decimals = 3) %>%
   gtsave("table_S2.html", path = "output")
 
 
@@ -437,6 +438,7 @@ table_S3 <- diet_models %>%
       rows = P_Value < 0.05
     )
   ) %>%
+  fmt_number(decimals = 3) %>%
   gtsave("table_S3.html", path = "output")
 
 
@@ -479,73 +481,11 @@ table_S4 <- hei_models %>%
       rows = P_Value < 0.05
     )
   ) %>%
+  fmt_number(decimals = 3) %>%
   gtsave("table_S4.html", path = "output")
 
 
 
-# Figure S8. Adequate and low fiber consumers on both ASA24 and FFQ dietary instruments
-ffq_bottom_quantile <- quantile(fiber_groups$ffq_fiber_perKcal)[1] # 5.21 
-asa_bottom_quantile <- quantile(fiber_groups$asa_fiber_perKcal)[1] # 2.98
-ffq_second_quantile <- quantile(fiber_groups$ffq_fiber_perKcal)[2] # 9.29
-asa_second_quantile <- quantile(fiber_groups$asa_fiber_perKcal)[2] # 7.86
-
-
-figS8 <- ggplot(fiber_groups,aes(y=asa_fiber_perKcal, x=ffq_fiber_perKcal))+
-  geom_point(aes(colour = "#464646"))+
-  theme(text = element_text(size=12,family = "mont"),
-        axis.title.y = element_text(margin=margin(r=15)),
-        axis.title.x = element_text(margin=margin(t=15))) +
-  scale_color_identity() +
-  labs(title = "Adequate and low fiber consumers",
-       y = "ASA energy adjusted fiber",
-       x = "FFQ energy adjusted fiber") +
-  annotate("rect", fill = "lightcoral", alpha = 0.5, 
-           xmin = ffq_bottom_quantile -.3, xmax = ffq_second_quantile,
-           ymin = asa_bottom_quantile, ymax = asa_second_quantile) +
-  annotate("rect", fill = "darkseagreen", alpha = 0.5, 
-           xmin = 14, xmax = max(fiber_groups$ffq_fiber_perKcal + .3),
-           ymin = 14, ymax = max(fiber_groups$asa_fiber_perKcal + .3)) 
-figS8
-ggsave("figure_S8.tiff", device = "tiff", dpi = 300, width = 12, height = 5, units = "in", path = "output", figS8)
-
-
-# Figure S9. Box plots of robust plant-unique CAZyme diversity for adequate and low fiber consumers
-fiber_groups <- fiber_groups %>%
-  right_join(merged, by = "subject_id") %>%
-  filter(!is.na(fiber_group))
-
-shannon_group <- ggplot(fiber_groups, aes(x = fiber_group, y = Shannon, fill = fiber_group))+
-  geom_boxplot()+ 
-  theme(text = element_text(size=15)) +
-  labs(title = "Shannon plant CAZyme diversity by fiber \nconsumption group",
-       y = "Shannon plant CAZyme diversity",
-       x = "fiber consumption group",
-       tag = "A") +
-  scale_fill_viridis_d(guide = "none") +
-  stat_compare_means(method = "wilcox.test", label.x = 1.3)
-
-chao1_group <- ggplot(fiber_groups, aes(x = fiber_group, y = Chao1, fill = fiber_group))+
-  geom_boxplot()+ 
-  theme(text = element_text(size=15)) +
-  labs(title = "Chao1 plant CAZyme diversity by fiber \nconsumption group",
-       y = "Chao1 plant CAZyme diversity",
-       x = "fiber consumption group",
-       tag = "B") +
-  scale_fill_viridis_d(guide = "none") +
-  stat_compare_means(method = "wilcox.test", label.x = 1.3)
-
-abundance_group <- ggplot(fiber_groups, aes(x = fiber_group, y = plant_cazyme_abundance, fill = fiber_group))+
-  geom_boxplot()+ 
-  theme(text = element_text(size=15)) +
-  labs(title = "Plant CAZyme abundance by fiber \nconsumption group",
-       y = "Chao1 plant cazyme diversity",
-       x = "fiber consumption group",
-       tag = "c") +
-  scale_fill_viridis_d(guide = "none") +
-  stat_compare_means(method = "wilcox.test", label.x = 1.3)
-
-figS9 <- grid.arrange(shannon_group, chao1_group, abundance_group, clip="off", ncol = 3)
-ggsave("figure_S9.tiff", device = "tiff", dpi = 300, width = 12, height = 5, units = "in", path = "output", figS9)
 
 
 # Table S7. Inflammatory variables and plant-unique CAZyme Shannon diversity, Chao1 diversity and abundance, adjusted for age, sex and BMI
@@ -558,7 +498,7 @@ inflammation_transformations <- read.csv('data/inflammation_transformations.csv'
 # run models
 inflamm_models <- looped_regression(merged, inflamm_variables, tableS7_variables, inflammation_transformations, FALSE) 
 
-table_S7 <- inflamm_models %>%
+table_S5 <- inflamm_models %>%
   mutate(Outcome = case_when(Outcome == "fecal_calprotectin" ~ "Fecal calprotectin",
                              Outcome == "fecal_mpo" ~ "Fecal myeloperoxidase",
                              Outcome == "fecal_neopterin" ~ "Fecal neopterin",
@@ -583,19 +523,57 @@ table_S7 <- inflamm_models %>%
       rows = P_Value < 0.05
     )
   ) %>%
-  gtsave("table_S7.html", path = "output")
+  fmt_number(decimals = 3) %>%
+  gtsave("table_S5.html", path = "output")
 
-# Table S8 mucin:plant and dietary variables
-tableS8_variables = c("muc2plantGHPL")
+
+# Figure S8 difference in muc2plant by menopause status
+menstrual <- read.csv("data/CTSC24532USDAWHNRCNu-MenstruationData_DATA_2022-12-15_1413.csv", header = TRUE)
+merged = FL100_data %>%
+  right_join(microbiome_data, by = "subject_id") %>%
+  right_join(menstrual, by = 'subject_id')
+
+mutate(sex = factor(sex))
+
+figS8 <- merged %>%
+  filter(!is.na(screen_endmenstr)) %>%
+  mutate(screen_endmenstr = ifelse(screen_endmenstr == 1, "Non-menopausal", "Menopausal")) %>%
+  ggplot(aes(x = screen_endmenstr, y = muc2plantGHPL, fill = screen_endmenstr))+
+  geom_boxplot() + 
+  theme(text = element_text(family = "mont", size=12),
+        axis.title.y = element_text(margin=margin(r=20)),
+        axis.title.x = element_text(margin=margin(t=15)),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  scale_fill_manual(values = c("#47818d","#f14902"), guide = "none") +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  labs(title = "Mucin:Plant by Menopausal Status",
+       y = "Mucin:Plant",
+       x = "Menopausal Status",
+       tag = "C") +
+  stat_compare_means(method = "wilcox.test", label.x = 1.3, label.y = .077, size=6, vjust = .99)
+
+ggsave("figure_S8.tiff", device = "tiff", dpi = 300, width = 12, height = 5, units = "in", path = "output", figS8)
+
+
+# Table S6 mucin:plant and dietary variables
+merged$muc2plantGHPL_sulf <- (merged$sulfatase_rpkg + merged$mucin_family_total)/merged$plant_family_totalGHPL
+
+tableS6_variables = c("muc2plantGHPL")
 diet_variables = c("avg_fibe_tnfs", "perKcal_fiber_tnfs", "dt_fibe", "dt_fiber_sol", "fibe_perKcal", "sol_fibe_perKcal", "hei_asa24_totalscore", "hei_ffq_totalscore", "dii_totalscore", "faiths_diversity_fiber", "faiths_diversity_carb", "faiths_diversity_diet", "fecal_ph")
 
 # read in saved transformations
 microbiome_transformations <- read.csv('data/microbiome_transformations.csv', header = TRUE)
+# Adding a few extra normalizations
+bestNormalize(merged$muc2plantGHPL_sulf)
+microbiome_transformations <- rbind(microbiome_transformations, c("muc2plantGHPL_sulf", "boxcox"))
 
 # run models
 diet_models <- looped_regression(merged, tableS8_variables, diet_variables, microbiome_transformations, FALSE) 
 
-table_S8 <- diet_models %>%
+table_S6 <- diet_models %>%
   mutate(Outcome = case_when(Outcome == "muc2plantGHPL" ~ "mucin:plant", TRUE ~ Outcome)) %>%
   mutate(Variable = case_when(Variable == "avg_fibe_tnfs" ~ "ASA24 total fiber",
                               Variable == "perKcal_fiber_tnfs" ~ "ASA24 energy adjusted total fiber",
@@ -627,6 +605,44 @@ table_S8 <- diet_models %>%
       rows = P_Value < 0.05
     )
   ) %>%
-  gtsave("table_S8.html", path = "output")
+  fmt_number(decimals = 3) %>%
+  gtsave("table_S6.html", path = "output")
+
+
+# Table S7 - muc2plant with sulfatases and inflammatory variables
+
+tableS7_variables = c("muc2plantGHPL_sulf")
+inflamm_variables = c("fecal_calprotectin", "fecal_neopterin", "fecal_mpo", "plasma_lbp")
+
+
+# run models
+inflamm_models <- looped_regression(no_seaweed, inflamm_variables, tableS7_variables, inflammation_transformations, FALSE) 
+
+table_S7 <- inflamm_models %>%
+  mutate(Outcome = case_when(Outcome == "fecal_calprotectin" ~ "Fecal calprotectin",
+                             Outcome == "fecal_mpo" ~ "Fecal myeloperoxidase",
+                             Outcome == "fecal_neopterin" ~ "Fecal neopterin",
+                             Outcome == "plasma_lbp" ~ "Plasma lipopolysaccharide binding protein"),
+         Variable = case_when(Variable == "muc2plantGHPL_sulf" ~ "Mucin and sulfatase to plant ratio")) %>%
+  mutate(outcome_transform = paste0(Outcome, " (transform: ", Transformation, ")")) %>%
+  select(-c(Outcome, Transformation)) %>%
+  gt(groupname_col = "outcome_transform") %>%
+  tab_header(
+    title = md("**Transformed inflammatory variables and microbiome variables**")) %>%
+  tab_style(
+    style = (
+      cell_text(weight = "bold")
+    ),
+    location = cells_row_groups()) %>%
+  tab_style(
+    style = (cell_fill(color = "#F9E3D6")
+    ),
+    locations = cells_body(
+      rows = P_Value < 0.05
+    )
+  ) %>%
+  fmt_number(decimals = 3) 
+table_S7 %>%
+gtsave("table_S7_sulfatases.html", path = "output")
 
 
