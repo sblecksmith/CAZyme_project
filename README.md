@@ -22,8 +22,6 @@ and the families unique to one substrate output from CAZy_family_substrates.R
 
 **dietML_prep.R** -- prepares data for running Dr. Andrew Oliver's dietML
 
-**make_fiber_groups.R** -- computes the lowest quartile fiber consumers and those consuming adequate fiber (>= 14 g/1000kcals) on both FQ and ASA24
-
 **merge_FL100_vartiables.R** -- adapted from Dr. Stephanie Wilson, pools FL100 data into one file
 
 **reads_per_sample.R** -- calculate mean and SD of reads per sample
@@ -58,9 +56,5 @@ clean up food tree file
 **figure_4.R**
 
 **figure_5.R**
-
-**figure_6.R**
-
-**figure_7.R**
 
 **supplemental_figures.R**
