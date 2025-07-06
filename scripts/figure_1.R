@@ -5,6 +5,10 @@
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
+library(showtext)
+
+font_add_google("Montserrat", "mont")
+showtext_auto()
 
 microbiome_data <- read.csv("data/microbiome_merged_variablesGH_GHPL.csv", header = TRUE) 
 
@@ -13,18 +17,20 @@ microbiome_data <- read.csv("data/microbiome_merged_variablesGH_GHPL.csv", heade
 shannon <- microbiome_data %>% ggplot() +
   geom_bar(aes(reorder(subject_id, Shannon), Shannon, fill = Shannon), stat = "identity", 
            color = "#47818d", show.legend = FALSE) +
-  labs(y="Shannon Diversity", x = "Subject", title = "Range of plant CAZyme Shannon Diversity",
+  labs(y="Shannon Diversity", x = "Subject",
        tag = "A")+
-  theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),
+        text=element_text(size=18,family = "mont"))
 
 
 # range of Chao1
 chao1 <- microbiome_data %>% ggplot() +
   geom_bar(aes(reorder(subject_id, Chao1), Chao1, fill = Chao1), stat = "identity", color = "#47818d",
            show.legend = FALSE) +
-  labs(y="Chao1 Diversity", x = "Subject", title = "Range of plant CAZyme Chao1 Diversity",
+  labs(y="Chao1 Diversity", x = "Subject",
        tag = "B")+
-  theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),
+        text=element_text(size=18, family = "mont"))
 
 
 
