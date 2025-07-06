@@ -10,7 +10,7 @@ library(Hmisc)
  # select(c(subject_id, muc2plantGH, muc2plantGHPL))
 
 muc2plant <- read.csv("data/muc2plant_sulf.csv", header = TRUE) %>%
-  select(c(subject_id, plant_family_totalGH, plant_family_totalGHPL, mucin_family_total, muc2plantGH, muc2plantGHPL, sulfatase_rpkg, sulfatase_no_akk_rpkg))
+  select(c(subject_id, plant_family_totalGH, plant_family_totalGHPL, mucin_family_total, muc2plantGH, muc2plantGHPL, sulfatase_rpkg))
 
 alpha_diversity <- read.csv("data/cazyme_families_rounded_diversity.csv", header = TRUE) %>%
   select(c(subject_id, Observed, Shannon, Chao1))
@@ -18,13 +18,17 @@ abundance <- read.csv("data/plant_cazyme_abundance.csv", header = TRUE)
 GHPLabundance <- read.csv("data/GHPL_abundance.csv", header = TRUE, check.names = FALSE)
 stool <- read.csv("data/FL100_stool_variables.txt", header = TRUE, sep = "\t") %>%
   select(c(subject_id, AfterV2, diff_time_hrs))
+crp <- read.csv("data/FL100_merged_variables_plus_CRP.csv", header = TRUE) %>%
+  rename("subject_id" = "UserName") %>%
+  select(c(subject_id,CRP_BD1))
 
 
 merged = muc2plant %>%
   left_join(alpha_diversity, by = "subject_id") %>%
   left_join(abundance, by = "subject_id") %>%
   left_join(GHPLabundance, by = "subject_id") %>%
-  left_join(stool, by = "subject_id") 
+  left_join(stool, by = "subject_id") %>%
+  left_join(crp, by = "subject_id")
 
 # Make quartiles of shannon, chao1, muc2plant, plant cazyme abundance
 merged$Shannon_quartile = as.numeric(cut2(merged$Shannon, g = 4))
@@ -33,7 +37,7 @@ merged$muc2plantGH_quartile = as.numeric(cut2(merged$muc2plantGH, g = 4))
 merged$muc2plantGHPL_quartile = as.numeric(cut2(merged$muc2plantGHPL, g = 4))
 merged$plant_cazyme_abundance_quartile = as.numeric(cut2(merged$plant_cazyme_abundance, g = 4))
 merged$sulfatase_rpkg_quartile = as.numeric(cut2(merged$sulfatase_rpkg, g = 4))
-merged$sulfatase_no_akk_rpkg_quartile = as.numeric(cut2(merged$sulfatase_no_akk_rpkg, g = 4))
+
 #Filter out where AfterV2 = 0, we don't want to use the subjects who submitted stool after the test meal
 merged <- merged %>% filter(AfterV2 == 0) # now 303
 
@@ -41,5 +45,5 @@ merged <- merged %>% filter(AfterV2 == 0) # now 303
 merged <-merged %>% filter(diff_time_hrs < 24) # now 285
 
 
-write.csv(merged[,!(colnames(merged) %in% c("AfterV2", "diff_time_hrs"))], "data/microbiome_merged_variablesGH_GHPL.csv", row.names = FALSE)
+write.csv(merged[,!(colnames(merged) %in% c("AfterV2", "diff_time_hrs"))], "data/microbiome_merged_variables.csv", row.names = FALSE)
 
