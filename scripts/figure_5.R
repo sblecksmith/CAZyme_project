@@ -1,11 +1,17 @@
 # title: figure_5
 # author: Sarah Blecksmith
-# purpose:  Make figure 5, muc2plant plots
-
-library(dplyr)
-library(ggplot2)
-library(ggpmisc)
+# purpose: plot dietML mean balanced accuracy for each muc2plant and SHAP plots
+---
+  
+library(tidyverse) 
+library(rvest) 
+library(xml2) 
+library(stringr) 
+library(Hmisc) 
 library(ggpubr)
+library(grid)
+library(shapviz)
+library(cowplot)
 library(gridExtra)
 library(showtext)
 library(bestNormalize)
@@ -13,162 +19,134 @@ library(bestNormalize)
 font_add_google("Montserrat", "mont")
 showtext_auto()
 
-# load the dietary and microbiome data
-FL100_data <- read.csv("data/FL100_merged_variables.csv", header = TRUE) 
-microbiome_data <- read.csv("data/microbiome_merged_variablesGH_GHPL.csv", header = TRUE) 
+#Load Functions
+source('scripts/functions/find_rds.R')
+source('scripts/functions/extract_rds_data.R')
+source('scripts/functions/extract_performance_metrics.R')
+source('scripts/functions/create_beeswarm_RDS.R')
+
+rds = read.csv('output/dietML_max_seed_paths.csv') 
+
+# Load model features
+top_features = read.csv('output/dietML_top_features.csv') 
 
 
-# calculate number of subjects above 1 standard deviation for muc2plant
-sum(microbiome_data$muc2plantGHPL - mean(microbiome_data$muc2plantGHPL) >= sd(microbiome_data$muc2plantGHPL)) #34
+#Get the paths of all rds files
+rds_files = as.data.frame(find_rds_files("../CAZyme_ML/dietML")) %>%
+  dplyr::rename('path' = 1)
 
-# calculate number of subjects below 1 standard deviation for muc2plant
-sum(microbiome_data$muc2plantGHPL - mean(microbiome_data$muc2plantGHPL) <= -sd(microbiome_data$muc2plantGHPL)) #32
-
-
-# merge the data
-merged = FL100_data %>%
-  right_join(microbiome_data, by = "subject_id") %>%
-  mutate(sex = factor(sex))
-
-
-inflamm_variables = c("fecal_calprotectin", "fecal_neopterin")
-
-# read in saved transformations
-inflammation_transformations <- read.csv('data/inflammation_transformations.csv', header = TRUE)
-microbiome_transformations <- read.csv("data/microbiome_transformations.csv", header = TRUE) 
-
-# merge the transformations
-transformations <- rbind(inflammation_transformations,microbiome_transformations)
-
-# Transform the variables
-for (outcome in transformations$Outcome) {
-  #Extract recommended transformation for outcome variable   
-  transform_recommendation = (transformations %>% filter(Outcome == outcome))[1,2]
+tags = separate_wider_delim(rds_files, cols = path, delim = "/", names_sep = "/")[,c("path/4","path/6", "path/8")] %>%
+  dplyr::rename('outcome' = 1,
+                'dataset' = 2,
+                'filename' = 3) %>%
+  mutate(seed = str_extract(filename, "[[:digit:]]+"))
   
-  #Retrieve the function object
-  transform = match.fun(transform_recommendation)
+
+
+#combine the dataframes
+rds_info = cbind(rds_files, tags) %>%
+  mutate(label = paste(outcome, dataset, seed, sep = ','))
+
+write.csv(rds_info, 'output/dietML_rds_paths.csv', row.names = FALSE)
+
+### 3) Performance metrics
+metrics_data = list()
+
+# Loop through each RDS file and extract the data
+for (i in seq_along(rds_info$path)) {
+  file_path = rds_info$path[i]
+  extracted_data = extract_performance(file_path)
+  metrics_data[[i]] = extracted_data
+}
+
+# Format
+all_metrics = bind_rows(metrics_data) %>%
+  rename('metric' = 1 ,
+         'estimator' = 2, 
+         'estimate' = 3, 
+         'config' = 4, 
+         'label' = 5) %>%
+  left_join(rds_info) %>%
+  select(-path) 
+write.csv(all_metrics, 'output/dietML_performance_metrics.csv', row.names = FALSE)
+
+
+mean_bal_acc <- filter(all_metrics, metric == "bal_accuracy") %>%
+  group_by(outcome, dataset) %>%
+  summarise(mean = mean(estimate))
+
+max_seed <- filter(all_metrics, metric == "bal_accuracy") %>%
+  group_by(outcome, dataset) %>%
+  mutate(max_seed = seed[which.max(estimate)]) %>%
+  filter(seed == max_seed) %>%
+  select(metric, estimate, outcome, dataset, seed) %>%
+  mutate(label = paste(outcome, dataset, seed, sep = ',')) %>%
+  left_join(rds_info %>% select(c("label","path")), by = "label")
+write.csv(max_seed, 'output/dietML_max_seed_paths.csv', row.names = FALSE)
+
+
+# plot the mean balanced accuracy for each dataset
+p1 <- mean_bal_acc %>%
+  filter(outcome == "muc2plant") %>%
+  mutate(dataset = case_when(dataset == "mono_div" ~ "monosaccharide diversity",
+                             dataset == "food_taxaHFE" ~ "food taxaHFE",
+                             dataset == "microbe_taxaHFE" ~ "microbial taxaHFE",
+                             TRUE ~ dataset)) %>%
+  #mutate(outcome = case_when(outcome == "muc2plant" ~ "mucin:plant", TRUE ~ outcome)) %>%
+  ggplot(aes(x = dataset, y = mean)) +
+  geom_bar(position = "dodge", stat = "identity", show.legend = FALSE, fill = "deepskyblue4") +
+  geom_text(aes(label = dataset),angle = 90, hjust = 1.1, color = "white") +
+  geom_text(aes(label=round(mean, digits = 2)), nudge_y = 0.025) + 
+  labs(
+    y = "mean balanced accuracy",
+    tag = "A") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        theme(text = element_text(size=18,family = "mont"))) +
+  geom_hline(yintercept = 0.5, color = "red", linetype = "dashed", linewidth = 1) 
+
+p1
+#ggsave("figure_6.tiff", device = "tiff", dpi = 300, width = 10, height = 5, units = "in", path = "output", fig6)
+
+##Regression Beeswarm Plots
+regression_list = list()
+
+# Loop through paths in your dataframe
+for (i in seq_along(rds$path)) {
+  path = rds$path[i]
+  feature_list = top_features
+  opt = paste0(rds$outcome[i],"_", rds$dataset[i])
   
+  plot_result = create_beeswarm(path, feature_list)
   
-  outcome_transformed = paste0(outcome, "_", transform_recommendation)
-  #Transformed outcome and pulling out the transformed data
-  merged[,outcome_transformed] = transform(merged[[outcome]])$x.t
+  # Generate a unique name for each plot based on the opt values
+  unique_name = paste0("plot_", opt, sep = "")
+  
+  # Store the plot_result in the list with the unique name
+  regression_list[[unique_name]] = plot_result
 }
 
 
-
-p1 <- ggplot(merged, aes(x=muc2plantGHPL)) +
-  geom_density(fill="#47818d", color="#e9ecef", alpha=0.8) +
-  ggtitle("Distribution of Mucin:Plant") +
-  labs(x= "Mucin:Plant", y="Density",
-       tag = "A")
-
-p2 <- ggplot(merged,aes(y=muc2plantGHPL_log_x,x=bmi_final))+
-  geom_point(aes(colour = "#464646"))+
-  theme(text = element_text(size=12,family = "mont"),
-        axis.title.y = element_text(margin=margin(r=15)),
-        axis.title.x = element_text(margin=margin(t=15)),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())+
-  scale_y_continuous(expansion(c(0,0.08)))+
-  scale_color_identity() +
-  xlim(NA,43.9) +
-  geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    #label.y = 4,
-    hjust = 0,
-    vjust = .995,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 6) +
-  labs(title = "Mucin:Plant by BMI", y = "Mucin:Plant", x = "BMI",tag = "B") 
-
-p3 <- merged %>%
-  mutate(sex = ifelse(sex == 1, "Male", "Female")) %>%
-  ggplot(aes(x = sex, y = muc2plantGHPL, fill = sex))+
-  geom_boxplot()+ 
-  theme(text = element_text(family = "mont", size=12),
-        axis.title.y = element_text(margin=margin(r=20)),
-        axis.title.x = element_text(margin=margin(t=15)),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) +
-  scale_fill_manual(values = c("#47818d","#f14902"), guide = "none") +
-  theme(
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()) +
-
-  labs(title = "Mucin:Plant by Sex",
-       y = "Mucin:Plant",
-       x = "sex",
-       tag = "C") +
-  stat_compare_means(method = "wilcox.test", label.x = 1.3, label.y = .077, size=6, vjust = .99)
-
-
-#Plotting residuals
-ratio_resid = resid(lm(data = merged, muc2plantGHPL ~ age + sex + bmi_final))
-cal_resid = resid(lm(data = merged, fecal_calprotectin_yeojohnson ~ age + sex + bmi_final))
-
-
-p4 <- ggplot(data = NULL, aes(x=ratio_resid,y=cal_resid))+
-  geom_point(aes(colour = "#464646"))+
-  theme(text = element_text(size=12,family = "mont"),
-        axis.title.y = element_text(margin=margin(r=15)),
-        axis.title.x = element_text(margin=margin(t=15))) +
-  scale_color_identity() +
-  #scale_color_manual(values = "#464646") +
-  geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    hjust = 0,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
-  labs(title = "Fecal Calprotectin by Mucin:Plant",
-       tag = "D",
-       x = "Mucin:Plant",
-       y = "Calprotectin") 
-
-p4
-
-# There aren't neopterin measures for everyone
-merged_neopt <- subset(merged, !is.na(merged[,"fecal_neopterin"]))
-ratio_neopt_resid = resid(lm(data = merged_neopt, muc2plantGHPL ~ age + sex + bmi_final))
-neopt_resid = resid(lm(data = merged_neopt, fecal_neopterin_yeojohnson ~ age + sex + bmi_final))
-
-
-p5 <- ggplot(data = NULL, aes(x=ratio_neopt_resid,y=neopt_resid))+
-  geom_point(aes(colour = "#464646"))+
-  theme(text = element_text(size=12,family = "mont"),
-        axis.title.y = element_text(margin=margin(r=15)),
-        axis.title.x = element_text(margin=margin(t=15))) +
-  scale_color_identity() +
-  #scale_color_manual(values = "#464646") +
-  geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    hjust = 0,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
-  labs(title = "Fecal Neopterin by Mucin:Plant",
-       x = "Mucin:Plant",
-       y = "Neopterin",
-       tag = "E") 
-
-p5
+p2 <- grid.arrange(arrangeGrob(regression_list[["plot_muc2plant_food_taxaHFE"]]), 
+                                            #top = text_grob("food_taxaHFE", size = 14, face = "bold", hjust = .2)), 
+                                            #padding = unit(3, "line")), 
+                                arrangeGrob(regression_list[["plot_muc2plant_microbe_taxaHFE"]]), 
+                                            #top = text_grob("microbe_taxaHFE", size = 14, face = "bold", hjust = .87)), 
+                                            #padding = unit(3, "line")), 
+                                clip="off", nrow = 2) #padding = unit(3, "line"), 
+                                
 
 
 
+#fig5 <- grid.arrange(p1,p2, clip="off", ncol = 1, nrow = 2, padding = unit(3, "line"))
+#fig5 <- grid.arrange(p1,p2, clip="off", ncol = 1, nrow = 2)
 
-fig5 <- grid.arrange(p1, p2, p3,p4,p5, clip="off",
-                 #widths=c(1,1,1),
-                 layout_matrix = rbind(c(1,1,2,3),
-                                       c(1,1,2,3),
-                                       c(4,4,5,5),
-                                       c(4,4,5,5)))
+fig5 <- grid.arrange(p1, p2, clip="off",
+                     #widths=c(1,1,1),
+                     layout_matrix = rbind(c(1,2,2,2),
+                                           c(1,2,2,2),
+                                           c(1,2,2,2)))
 
-ggsave("figure_5.tiff", device = "tiff", dpi = 300, width = 18, height = 9, units = "in", path = "output", fig5)
+ggsave("figure_5.tiff", device = "tiff", dpi = 300, width = 16, height = 8, units = "in", path = "output", fig5)
+
 
