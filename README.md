@@ -22,6 +22,8 @@ and the families unique to one substrate output from CAZy_family_substrates.R
 
 **dietML_prep.R** -- prepares data for running Dr. Andrew Oliver's dietML
 
+**match_sulfatases.R** -- collect sulfatase abundance from humann3 output, normalizes with Microbe Census to rpkg and calculates muc2plantGHPL_sulf
+
 **merge_FL100_vartiables.R** -- adapted from Dr. Stephanie Wilson, pools FL100 data into one file
 
 **reads_per_sample.R** -- calculate mean and SD of reads per sample
