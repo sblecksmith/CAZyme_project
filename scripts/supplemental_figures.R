@@ -618,6 +618,8 @@ inflamm_variables = c("fecal_calprotectin", "fecal_neopterin", "fecal_mpo", "pla
 # run models
 inflamm_models <- looped_regression(merged, inflamm_variables, tableS7_variables, inflammation_transformations, FALSE) 
 # don't have crp for everyone
+
+
 merged_crp <- subset(merged, !is.na(merged[,"CRP_BD1"]))
 crp_models <- looped_regression(merged_crp, "CRP_BD1", tableS7_variables, inflammation_transformations, FALSE) 
 inflamm_models <- rbind(inflamm_models, crp_models)
