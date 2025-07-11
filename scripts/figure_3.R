@@ -58,14 +58,6 @@ p1 <- ggplot(data = NULL, aes(x=shannon_neopt_resid, y=neopt_resid)) +
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 3,
-    label.x = -0.9,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        x = "Plant CAZyme Shannon Diversity",
        y = "Fecal Neopterin",
@@ -87,21 +79,10 @@ p2 <- ggplot(data = NULL, aes(x=abund_neopt_resid, y=neopt_resid)) +
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 3,
-    label.x = -5,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        x = "Plant CAZyme Abundance",
        y = "Fecal Neopterin",
        tag = "B") 
-
-
-
 
 
 # MPO
@@ -120,14 +101,6 @@ p3 <-ggplot(data = NULL, aes(x=shannon_resid, y=mpo_resid)) +
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 4,
-    label.x = -0.9,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        x = "Plant CAZyme Shannon Diversity",
        y = "Fecal Myeloperoxidase",
@@ -150,14 +123,6 @@ p4 <- ggplot(data = NULL, aes(x=abund_resid, y=mpo_resid)) +
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 4,
-    label.x = -5,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        x = "Plant CAZyme Abundance",
        y = "Fecal Myeloperoxidase",
