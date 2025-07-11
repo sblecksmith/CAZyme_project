@@ -487,21 +487,31 @@ table_S4 <- hei_models %>%
 
 
 
-# Table S7. Inflammatory variables and plant-unique CAZyme Shannon diversity, Chao1 diversity and abundance, adjusted for age, sex and BMI
-tableS7_variables = c("Shannon", "Chao1", "plant_cazyme_abundance")
+# Table S5. Inflammatory variables and plant-unique CAZyme Shannon diversity, Chao1 diversity and abundance, adjusted for age, sex and BMI
+tableS5_variables = c("Shannon", "Chao1", "plant_cazyme_abundance")
 inflamm_variables = c("fecal_calprotectin", "fecal_neopterin", "fecal_mpo", "plasma_lbp")
 
 # read in saved transformations
 inflammation_transformations <- read.csv('data/inflammation_transformations.csv', header = TRUE)
 
 # run models
-inflamm_models <- looped_regression(merged, inflamm_variables, tableS7_variables, inflammation_transformations, FALSE) 
+inflamm_models <- looped_regression(merged, inflamm_variables, tableS5_variables, inflammation_transformations, FALSE) 
+inflammation_transformations <- rbind(inflammation_transformations, c("CRP_BD1", "boxcox"))
+
+# don't have crp for everyone
+merged_crp <- subset(merged, !is.na(merged[,"CRP_BD1"]))
+crp_models <- looped_regression(merged_crp, "CRP_BD1", tableS5_variables, inflammation_transformations, FALSE) 
+inflamm_models <- rbind(inflamm_models, crp_models)
+
+# run models
+#inflamm_models <- looped_regression(merged, inflamm_variables, tableS5_variables, inflammation_transformations, FALSE) 
 
 table_S5 <- inflamm_models %>%
   mutate(Outcome = case_when(Outcome == "fecal_calprotectin" ~ "Fecal calprotectin",
                              Outcome == "fecal_mpo" ~ "Fecal myeloperoxidase",
                              Outcome == "fecal_neopterin" ~ "Fecal neopterin",
-                             Outcome == "plasma_lbp" ~ "Plasma lipopolysaccharide binding protein"),
+                             Outcome == "plasma_lbp" ~ "Plasma lipopolysaccharide binding protein",
+                            Outcome == "CRP_BD1" ~ "Plasma C-reactive protein"),
          Variable = case_when(Variable == "plant_cazyme_abundance" ~ "Plant CAZyme abundance",
                               Variable == "Shannon" ~ "Plant CAZyme Shannon diversity",
                               Variable == "Chao1" ~ "Plant CAZyme Chao1 diversity")) %>%
@@ -570,10 +580,10 @@ bestNormalize(merged$muc2plantGHPL_sulf)
 microbiome_transformations <- rbind(microbiome_transformations, c("muc2plantGHPL_sulf", "boxcox"))
 
 # run models
-diet_models <- looped_regression(merged, tableS8_variables, diet_variables, microbiome_transformations, FALSE) 
+diet_models <- looped_regression(merged, tableS6_variables, diet_variables, microbiome_transformations, FALSE) 
 
 table_S6 <- diet_models %>%
-  mutate(Outcome = case_when(Outcome == "muc2plantGHPL" ~ "mucin:plant", TRUE ~ Outcome)) %>%
+  mutate(Outcome = case_when(Outcome == "muc2plantGHPL" ~ "Muc2Plant", TRUE ~ Outcome)) %>%
   mutate(Variable = case_when(Variable == "avg_fibe_tnfs" ~ "ASA24 total fiber",
                               Variable == "perKcal_fiber_tnfs" ~ "ASA24 energy adjusted total fiber",
                               Variable == "dt_fibe"  ~ "FFQ total fiber",
@@ -608,7 +618,7 @@ table_S6 <- diet_models %>%
   gtsave("table_S6.html", path = "output")
 
 
-# Table S8 - muc2plant  and inflammatory variables
+# Table S7 - muc2plant  and inflammatory variables
 bestNormalize(merged$CRP_BD1)
 inflammation_transformations <- rbind(inflammation_transformations, c("CRP_BD1", "boxcox"))
 
@@ -618,8 +628,6 @@ inflamm_variables = c("fecal_calprotectin", "fecal_neopterin", "fecal_mpo", "pla
 # run models
 inflamm_models <- looped_regression(merged, inflamm_variables, tableS7_variables, inflammation_transformations, FALSE) 
 # don't have crp for everyone
-
-
 merged_crp <- subset(merged, !is.na(merged[,"CRP_BD1"]))
 crp_models <- looped_regression(merged_crp, "CRP_BD1", tableS7_variables, inflammation_transformations, FALSE) 
 inflamm_models <- rbind(inflamm_models, crp_models)
@@ -631,7 +639,7 @@ table_S7 <- inflamm_models %>%
                              Outcome == "fecal_neopterin" ~ "Fecal neopterin",
                              Outcome == "plasma_lbp" ~ "Plasma lipopolysaccharide binding protein",
                              Outcome == "CRP_BD1" ~ "Plasma C-reactive protein"),
-         Variable = case_when(Variable == "muc2plantGHPL" ~ "Mucin to plant ratio")) %>%
+         Variable = case_when(Variable == "muc2plantGHPL" ~ "Muc2Plant")) %>%
   mutate(outcome_transform = paste0(Outcome, " (transform: ", Transformation, ")")) %>%
   select(-c(Outcome, Transformation)) %>%
   gt(groupname_col = "outcome_transform") %>%
@@ -649,8 +657,7 @@ table_S7 <- inflamm_models %>%
       rows = P_Value < 0.05
     )
   ) %>%
-  fmt_number(decimals = 3) 
-table_S7 #%>%
+  fmt_number(decimals = 3) %>%
 gtsave("table_S7.html", path = "output")
 
 
@@ -693,9 +700,8 @@ table_S8 <- inflamm_models %>%
       rows = P_Value < 0.05
     )
   ) %>%
-  fmt_number(decimals = 3) 
-table_S8 #%>%
-gtsave("table_S8_sulfatases.html", path = "output")
+  fmt_number(decimals = 3) %>%
+gtsave("table_S8.html", path = "output")
 
 # Table S9 - muc2plant with sulfatases and inflammatory variables, removing seaweed consumers
 
@@ -748,6 +754,5 @@ table_S9 <- inflamm_models %>%
       rows = P_Value < 0.05
     )
   ) %>%
-  fmt_number(decimals = 3) 
-table_S9 #%>%
-  gtsave("table_S9_sulfatases.html", path = "output")
+  fmt_number(decimals = 3) %>%
+  gtsave("table_S9.html", path = "output")
