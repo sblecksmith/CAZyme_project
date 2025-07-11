@@ -59,14 +59,6 @@ p1 <-ggplot(data = NULL, aes(x=sol_fibe_resid, y=shannon_resid)) +
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 3,
-    label.x = 1,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        y = "Plant CAZyme\nShannon Diversity",
        x = "Energy-adjusted Habitual Soluble Fiber",
@@ -91,14 +83,6 @@ p2 <-ggplot(data = NULL, aes(x=sol_fibe_resid, y=chao1_resid)) +
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 3.5,
-    label.x = 1,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        y = "Plant CAZyme\nChao1 Diversity",
        x = "Energy-adjusted Habitual Soluble Fiber",
@@ -121,14 +105,6 @@ p3 <-ggplot(data = NULL, aes(x=sol_fibe_resid, y=plant_cazyme_abundance_resid)) 
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 3,
-    label.x = 0.5,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        y = "Plant CAZyme Abundance",
        x = "Energy-adjusted Habitual Soluble Fiber",
@@ -156,14 +132,6 @@ p4 <-ggplot(data = NULL, aes(x=ph_resid, y=shannon_ph_resid)) +
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 3,
-    label.x = -0.25,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        y = "Plant CAZymen\nShannon Diversity",
        x = "Fecal pH",
@@ -187,14 +155,6 @@ p5 <-ggplot(data = NULL, aes(x=ph_resid, y=chao1_ph_resid)) +
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 3.5,
-    label.x = -0.25,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        y = "Plant CAZyme\nChao1 Diversity",
        x = "Fecal pH",
@@ -218,14 +178,6 @@ p6 <-ggplot(data = NULL, aes(x=ph_resid, y=plant_cazyme_abundance_ph_resid)) +
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 3,
-    label.x = -0.5,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        y = "Plant CAZyme Abundance",
        x = "Fecal pH",
