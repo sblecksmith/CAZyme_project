@@ -58,7 +58,7 @@ finaloutput = data.frame()
       p_values <- summary$coefficients[predictor, "Pr(>|t|)"]
     
       # Pull out the r2 value
-      r2 <- summary$r.squared
+      r2 <- summary$adj.r.squared
     
     
       # Store the results in the list
