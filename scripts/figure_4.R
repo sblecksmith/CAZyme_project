@@ -71,15 +71,7 @@ p2 <- ggplot(merged,aes(y=muc2plantGHPL_log_x,x=bmi_final))+
   scale_color_identity() +
   xlim(NA,43.9) +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 4,
-    label.x = 30,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 4.5) +
-  labs(y = "Muc2plant", 
+  labs(y = "Muc2Plant", 
        x = "BMI",
        tag = "B") 
 
@@ -98,7 +90,7 @@ p3 <- merged %>%
     panel.grid.minor = element_blank()) +
 
   labs(
-       y = "Muc2plant",
+       y = "Muc2Plant",
        x = "sex",
        tag = "C") +
   stat_compare_means(method = "wilcox.test", label.x = 1, label.y = .077, size=4.5, vjust = .99)
@@ -117,17 +109,9 @@ p4 <- ggplot(data = NULL, aes(x=ratio_resid,y=cal_resid))+
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.x = -0.005,
-    label.y = 4.4,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
        tag = "D",
-       x = "Muc2plant",
+       x = "Muc2Plant",
        y = "Calprotectin") 
 
 p4
@@ -146,16 +130,8 @@ p5 <- ggplot(data = NULL, aes(x=ratio_neopt_resid,y=neopt_resid))+
   scale_color_identity() +
   #scale_color_manual(values = "#464646") +
   geom_smooth(method = "lm", formula = y~x, se = F, color = "#f14902") +
-  stat_poly_eq(
-    geom = "text",
-    label.y = 2.6,
-    label.x = -.005,
-    aes(label = paste(after_stat(p.value.label),
-                      after_stat(n.label),
-                      after_stat(rr.label), sep = "*\", \"*")),
-    size = 5) +
   labs(
-       x = "Muc2plant",
+       x = "Muc2Plant",
        y = "Neopterin",
        tag = "E") 
 
